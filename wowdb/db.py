@@ -1,12 +1,13 @@
 import contextlib
 import logging
-import pandas
 import pathlib
 import re
-import requests
 import shutil
 import sqlite3
 import tempfile
+
+import pandas
+import requests
 
 import wowdb.exceptions as db_exc
 
@@ -18,7 +19,7 @@ class DB:
         self.path = path and pathlib.Path(path)
         self.name_regex = re.compile(r'^\w+$')
         self.context = contextlib.ExitStack()
-        self.db = None
+        self.dbcon = None
         self.dbname = dbname
 
         if dbname and not self.name_regex.match(dbname):
@@ -31,9 +32,9 @@ class DB:
             self.build)
 
     def __enter__(self):
-        logging.info("Opening database %s" % self)
+        logging.info("Opening database %s", self)
 
-        if self.db:
+        if self.dbcon:
             raise db_exc.DBAccessError(
                 "Attempt to re-open database %s" % self)
 
@@ -50,7 +51,7 @@ class DB:
             dbfile = self.path / (self.dbname + ".sqlite")
 
         db_ctx = contextlib.closing(sqlite3.connect(dbfile))
-        self.db = self.context.enter_context(db_ctx)
+        self.dbcon = self.context.enter_context(db_ctx)
 
         logging.info("Database open: %s", self)
 
@@ -60,7 +61,7 @@ class DB:
         self.context.close()
 
     def _table_path(self, table):
-        if not self.db:
+        if not self.dbcon:
             raise db_exc.DBAccessError("Database not open: %s" % self)
         if not self.name_regex.match(table):
             raise db_exc.DBTableError(
@@ -85,17 +86,17 @@ class DB:
         except FileNotFoundError:
             try:
                 return self._download_table(table).open('rt', encoding='utf-8')
-            except requests.HTTPError as e:
-                if e.response.status_code == requests.codes.not_found:
+            except requests.HTTPError as exc:
+                if exc.response.status_code == requests.codes.not_found:
                     raise db_exc.DBTableError(
-                        "Table [%s] not found" % table) from e
-                raise e from None
+                        "Table [%s] not found" % table) from exc
+                raise exc from None
 
     def load(self, table, **table_params):
         with self._open_table(table) as f:
             df = pandas.read_csv(f, **table_params)
-            df.to_sql(table, self.db)
+            df.to_sql(table, self.dbcon)
 
     def query(self, sql, **query_params):
-        df = pandas.read_sql(sql, self.db, **query_params)
+        df = pandas.read_sql(sql, self.dbcon, **query_params)
         return df.to_dict(orient='index')

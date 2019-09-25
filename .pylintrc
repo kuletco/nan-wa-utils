@@ -1,0 +1,8 @@
+[VARIABLES]
+good-names=f,fd,i,j,k,ex,rq,df,Run,_,logger
+
+[TYPECHECK]
+generated-members=requests.codes
+
+[MESSAGE CONTROL]
+disable=missing-function-docstring,missing-class-docstring,missing-module-docstring
