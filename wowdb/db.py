@@ -1,5 +1,4 @@
 import contextlib
-import csv
 import logging
 import pandas
 import pathlib
@@ -24,7 +23,7 @@ class DB:
 
         if dbname and not self.name_regex.match(dbname):
             raise ValueError("Invalid database name: %s" % (dbname))
-    
+
     def __str__(self):
         return "WoWDB[%s @ %s; build %s]" % (
             self.dbname or 'MEMORY',
@@ -45,11 +44,11 @@ class DB:
         else:
             self.path = self.path / self.build
             self.path.mkdir(exist_ok=True)
-        
+
         dbfile = ":memory:"
         if self.dbname:
             dbfile = self.path / (self.dbname + ".sqlite")
-        
+
         db_ctx = contextlib.closing(sqlite3.connect(dbfile))
         self.db = self.context.enter_context(db_ctx)
 
@@ -75,21 +74,28 @@ class DB:
 
         with file_path.open('wb') as output:
             with requests.get(self.url, params=params, stream=True) as rq:
+                rq.raise_for_status()
                 shutil.copyfileobj(rq.raw, output)
 
         return file_path
-    
+
     def _open_table(self, table):
         try:
             return self._table_path(table).open('rt', encoding='utf-8')
         except FileNotFoundError:
-            return self._download_table(table).open('rt', encoding='utf-8')
+            try:
+                return self._download_table(table).open('rt', encoding='utf-8')
+            except requests.HTTPError as e:
+                if e.response.status_code == requests.codes.not_found:
+                    raise db_exc.DBTableError(
+                        "Table [%s] not found" % table) from e
+                raise e from None
 
     def load(self, table, **table_params):
         with self._open_table(table) as f:
             df = pandas.read_csv(f, **table_params)
             df.to_sql(table, self.db)
-    
+
     def query(self, sql, **query_params):
         df = pandas.read_sql(sql, self.db, **query_params)
         return df.to_dict(orient='index')
