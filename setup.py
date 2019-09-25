@@ -1,7 +1,9 @@
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+
+def slurp(file_name):
+    with open(file_name, "r") as f:
+        return f.read()
 
 setuptools.setup(
     name="nan-wa-utils",
@@ -9,7 +11,7 @@ setuptools.setup(
     author="nan",
     author_email="nan-gameware@users.noreply.github.com",
     description="A small example package",
-    long_description=long_description,
+    long_description=slurp("README.md"),
     long_description_content_type="text/markdown",
     url="https://github.com/nan-gameware/nan-wa-utils",
     packages=setuptools.find_packages(),
@@ -21,10 +23,10 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
+        'jinja2',
         'pandas',
         'pyyaml',
         'requests',
-        'jinja2',
     ],
     entry_points={
         "console_scripts": [
