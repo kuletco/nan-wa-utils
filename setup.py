@@ -27,6 +27,7 @@ setuptools.setup(
         'pandas',
         'pyyaml',
         'requests',
+        'tabulate',
     ],
     entry_points={
         "console_scripts": [

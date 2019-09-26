@@ -1,5 +1,5 @@
 [VARIABLES]
-good-names=f,fd,i,j,k,ex,rq,df,Run,_,logger
+good-names=f,fd,i,j,k,db,ex,rq,df,Run,_,logger
 
 [TYPECHECK]
 generated-members=requests.codes
