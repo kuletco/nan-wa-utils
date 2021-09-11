@@ -42,6 +42,11 @@ class CLI:
             required=True
         )
         parser.add_argument(
+            "-l", "--locale", type=str, metavar=["enUS", "zhCN"],
+            help="configure locale",
+            dest='locale', default='enUS'
+        )
+        parser.add_argument(
             "object_name", metavar="OBJECT",
             help="name of the object to query"
         )
@@ -57,7 +62,7 @@ class CLI:
         logging.basicConfig(level=self.args.log_level, format=fmt)
 
     def _get_storage(self):
-        return wdb_storage.Storage(**self.config['storage'])
+        return wdb_storage.Storage(**self.config['storage'], locale=self.args.locale)
 
     def _get_schema(self):
         return wdb_schema.Schema(**self.config.get('schema', {}))

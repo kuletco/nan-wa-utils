@@ -17,7 +17,7 @@ VALID_VERSION = re.compile(r'^\d+(\.\d+){3}$')
 
 
 class Storage:
-    def __init__(self, version, path=None, name=None, object_exists=None):
+    def __init__(self, version, path=None, name=None, object_exists=None, locale=None):
         super().__init__()
 
         if not VALID_VERSION.match(version):
@@ -33,6 +33,7 @@ class Storage:
         self.db_connection = None
         self.storage_name = name
         self.objects = dict()
+        self.locale = locale
 
         try:
             object_exists = object_exists or 'warn'
@@ -87,7 +88,7 @@ class Storage:
         return self.storage_path / ("%s.csv" % table)
 
     def _download_table(self, table):
-        params = {"name": table, "build": self.version}
+        params = {"name": table, "build": self.version, "locale": self.locale}
         logging.info("Downloading table [%s]", table)
         file_path = self._table_path(table)
 
